@@ -192,6 +192,10 @@ class IliasElementType(Enum):
                         TypeMatcher.query("calldirectlink"),
                     ),
                     TypeMatcher.img_src("_webr.svg"),  # duplicated :(
+                    TypeMatcher.any( # Videos on FAU StudOn
+                        TypeMatcher.query("baseclass=ilobjplugindispatchgui"),
+                        TypeMatcher.img_src("type_4/icon.svg"),
+                    ),
                 )
             case IliasElementType.LINK_COLLECTION:
                 return TypeMatcher.any(

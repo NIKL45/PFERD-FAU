@@ -773,7 +773,7 @@ instance's greatest bottleneck.
                 async with self.session.get(url, allow_redirects=False) as resp:
                     # Redirect to anything except a "sendfile" means we weren't authenticated
                     if hdrs.LOCATION in resp.headers:
-                        if "&cmd=sendfile" not in resp.headers[hdrs.LOCATION]:
+                        if "&cmd=sendfile" not in resp.headers[hdrs.LOCATION] and "&cmdClass=ilObjExternalContentGUI" not in resp.headers[hdrs.LOCATION]:
                             return False
                         # Directly follow the redirect to not make a second, unnecessary request
                         next_url = resp.headers[hdrs.LOCATION]
