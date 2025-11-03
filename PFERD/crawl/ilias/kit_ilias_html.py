@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup, Tag
 from PFERD.crawl import CrawlError
 from PFERD.crawl.crawler import CrawlWarning
 from PFERD.logging import log
-from PFERD.utils import url_set_query_params
+from PFERD.utils import sanitize_path_name, url_set_query_params
 
 TargetType = str | int
 
@@ -301,7 +301,7 @@ class IliasPageElement:
             name = normalized
 
         if not skip_sanitize:
-            name = _sanitize_path_name(name)
+            name = sanitize_path_name(name)
 
         return IliasPageElement(typ, url, name, mtime, description)
 
@@ -699,7 +699,7 @@ class IliasPage:
                 log.explain(f"Skipping offline item: {title.get_text().strip()!r}")
                 continue
 
-            name = _sanitize_path_name(link.text.strip())
+            name = sanitize_path_name(link.text.strip())
             url = self._abs_url_from_link(link)
 
             if "cmd=manage" in url and "cmdClass=ilPDSelectedItemsBlockGUI" in url:
@@ -727,7 +727,7 @@ class IliasPage:
         for link in links:
             url = self._abs_url_from_link(link)
             name = re.sub(r"\([\d,.]+ [MK]B\)", "", link.get_text()).strip().replace("\t", "")
-            name = _sanitize_path_name(name)
+            name = sanitize_path_name(name)
 
             if "file_id" not in url:
                 _unexpected_html_warning()
@@ -749,7 +749,7 @@ class IliasPage:
                 continue
             items.append(
                 IliasPageElement.create_new(
-                    IliasElementType.FILE, self._abs_url_from_link(link), _sanitize_path_name(link.get_text())
+                    IliasElementType.FILE, self._abs_url_from_link(link), sanitize_path_name(link.get_text())
                 )
             )
 
@@ -841,7 +841,7 @@ class IliasPage:
         title = cast(Tag, row.select_one("td.std:nth-child(3)")).get_text().strip()
         title += ".mp4"
 
-        video_name: str = _sanitize_path_name(title)
+        video_name: str = sanitize_path_name(title)
 
         video_url = self._abs_url_from_link(link)
 
@@ -897,7 +897,7 @@ class IliasPage:
                 _unexpected_html_warning()
                 continue
 
-            name = _sanitize_path_name(name_tag.get_text().strip())
+            name = sanitize_path_name(name_tag.get_text().strip())
             log.explain(f"Found exercise detail entry {name!r}")
 
             results.append(
@@ -924,7 +924,7 @@ class IliasPage:
             parent_row: Tag = cast(Tag, link.find_parent("tr"))
             children = cast(list[Tag], parent_row.find_all("td"))
 
-            name = _sanitize_path_name(children[1].get_text().strip())
+            name = sanitize_path_name(children[1].get_text().strip())
             log.explain(f"Found exercise file entry {name!r}")
 
             date = None
@@ -961,7 +961,7 @@ class IliasPage:
             if "ass_id=" not in href or "cmdclass=ilassignmentpresentationgui" not in href.lower():
                 continue
 
-            name = _sanitize_path_name(exercise.get_text().strip())
+            name = sanitize_path_name(exercise.get_text().strip())
             results.append(
                 IliasPageElement.create_new(
                     IliasElementType.EXERCISE, self._abs_url_from_link(exercise), name
@@ -987,12 +987,12 @@ class IliasPage:
         for link in links:
             abs_url = self._abs_url_from_link(link)
             # Make sure parents are sanitized. We do not want accidental parents
-            parents = [_sanitize_path_name(x) for x in IliasPage._find_upwards_folder_hierarchy(link)]
+            parents = [sanitize_path_name(x) for x in IliasPage._find_upwards_folder_hierarchy(link)]
 
             if parents:
-                element_name = "/".join(parents) + "/" + _sanitize_path_name(link.get_text())
+                element_name = "/".join(parents) + "/" + sanitize_path_name(link.get_text())
             else:
-                element_name = _sanitize_path_name(link.get_text())
+                element_name = sanitize_path_name(link.get_text())
 
             element_type = IliasPage._find_type_for_element(
                 element_name, abs_url, lambda: IliasPage._find_icon_for_folder_entry(link)
@@ -1057,7 +1057,7 @@ class IliasPage:
                         IliasPageElement.create_new(
                             typ=IliasElementType.MEDIACAST_VIDEO,
                             url=self._abs_url_from_relative(cast(str, url)),
-                            name=_sanitize_path_name(title),
+                            name=sanitize_path_name(title),
                         )
                     )
 
@@ -1085,7 +1085,7 @@ class IliasPage:
 
             videos.append(
                 IliasPageElement.create_new(
-                    typ=IliasElementType.MOB_VIDEO, url=url, name=_sanitize_path_name(title), mtime=None
+                    typ=IliasElementType.MOB_VIDEO, url=url, name=sanitize_path_name(title), mtime=None
                 )
             )
 
@@ -1196,7 +1196,7 @@ class IliasPage:
             )
             found_titles.append(head_tag.get_text().strip())
 
-        return [_sanitize_path_name(x) for x in reversed(found_titles)]
+        return [sanitize_path_name(x) for x in reversed(found_titles)]
 
     @staticmethod
     def _find_link_description(link: Tag) -> Optional[str]:
@@ -1251,7 +1251,7 @@ class IliasPage:
 
         for title in card_titles:
             url = self._abs_url_from_link(title)
-            name = _sanitize_path_name(title.get_text().strip())
+            name = sanitize_path_name(title.get_text().strip())
             typ = IliasPage._find_type_for_element(name, url, lambda: IliasPage._find_icon_from_card(title))
 
             if not typ:
@@ -1278,7 +1278,7 @@ class IliasPage:
                 log.warn_contd(f"Could not find click handler target for signal {signal} for {button}")
                 continue
             url = self._abs_url_from_relative(open_match.group(1))
-            name = _sanitize_path_name(button.get_text().strip())
+            name = sanitize_path_name(button.get_text().strip())
             typ = IliasPage._find_type_for_element(name, url, lambda: IliasPage._find_icon_from_card(button))
             caption_parent = cast(
                 Tag,
@@ -1534,10 +1534,6 @@ def _yesterday() -> date:
 
 def _tomorrow() -> date:
     return date.today() + timedelta(days=1)
-
-
-def _sanitize_path_name(name: str) -> str:
-    return name.replace("/", "-").replace("\\", "-").strip()
 
 
 def parse_ilias_forum_export(forum_export: BeautifulSoup) -> list[IliasForumThread]:

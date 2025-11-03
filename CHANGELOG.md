@@ -24,6 +24,11 @@ ambiguous situations.
 
 ## Added
 - Store the description when using the `internet-shortcut` link format
+- Support for basic auth with the kit-ipd crawler
+
+## Fixed
+- Event loop errors on Windows with Python 3.14
+- Sanitize `/` in headings in kit-ipd crawler
 
 ## 3.8.3 - 2025-07-01
 
